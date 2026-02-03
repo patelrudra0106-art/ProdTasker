@@ -134,9 +134,9 @@ window.loadAdminPanel = function(filter = '') {
             </div>
 
             <div class="mb-6 pb-6 border-b border-border animate-fade-in">
-                <h4 class="text-xs font-bold uppercase text-muted mb-2">Global Alert</h4>
+                <h4 class="text-xs font-bold uppercase text-muted mb-2">Global Notification</h4>
                 <div class="flex gap-2">
-                    <input type="text" id="admin-broadcast-input" placeholder="System Alert..." class="input-s1n py-2 text-xs">
+                    <input type="text" id="admin-broadcast-input" placeholder="System Notification..." class="input-s1n py-2 text-xs">
                     <button onclick="adminSendBroadcast()" class="btn-s1n px-4 py-2">
                         <i data-lucide="send" class="w-4 h-4"></i>
                     </button>
@@ -144,9 +144,9 @@ window.loadAdminPanel = function(filter = '') {
             </div>
 
             <div class="mb-6 pb-6 border-b border-border animate-fade-in">
-                <h4 class="text-xs font-bold uppercase text-muted mb-2">Sound Protocol Config</h4>
+                <h4 class="text-xs font-bold uppercase text-muted mb-2">Music Upload</h4>
                 <div class="flex flex-col gap-2 mb-2">
-                    <input type="text" id="sound-name-input" placeholder="Frequency Name (e.g. Rain)" class="input-s1n py-2 text-xs">
+                    <input type="text" id="sound-name-input" placeholder="Music Name (e.g. Rain)" class="input-s1n py-2 text-xs">
                     
                     <input type="file" id="sound-file-input" accept="audio/*" class="block w-full text-xs text-muted
                         file:mr-4 file:py-2 file:px-4
@@ -156,9 +156,9 @@ window.loadAdminPanel = function(filter = '') {
                         hover:file:opacity-80 cursor-pointer
                     ">
                 </div>
-                <button id="btn-upload-sound" onclick="adminAddSound()" class="btn-s1n w-full py-2 text-xs uppercase mb-4 tracking-wider">Upload Frequency</button>
+                <button id="btn-upload-sound" onclick="adminAddSound()" class="btn-s1n w-full py-2 text-xs uppercase mb-4 tracking-wider">Upload Music</button>
                 <div id="admin-sound-list" class="space-y-2">
-                    <p class="text-[10px] text-muted italic">Loading audio protocols...</p>
+                    <p class="text-[10px] text-muted italic">Loading Music...</p>
                 </div>
             </div>
 
@@ -293,18 +293,18 @@ window.adminAddSound = function() {
             if(window.showNotification) window.showNotification("System Update", "Audio encoded & uploaded.", "success");
             nameInput.value = '';
             fileInput.value = '';
-            btn.textContent = "Upload Frequency";
+            btn.textContent = "Upload Music";
             btn.disabled = false;
         }).catch(err => {
             alert("Upload failed: " + err.message);
-            btn.textContent = "Upload Frequency";
+            btn.textContent = "Upload Music";
             btn.disabled = false;
         });
     };
 
     reader.onerror = function() {
         alert("Error reading file.");
-        btn.textContent = "Upload Frequency";
+        btn.textContent = "Upload Music";
         btn.disabled = false;
     };
 

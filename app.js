@@ -48,7 +48,7 @@ window.openFullSettings = function() {
     // 1. Load User Identity
     const user = JSON.parse(localStorage.getItem('auraUser'));
     if (usernameDisplay) {
-        usernameDisplay.textContent = user ? user.name : 'Guest Agent';
+        usernameDisplay.textContent = user ? user.name : 'Guest user';
     }
 
     // 2. Load Timer Values
