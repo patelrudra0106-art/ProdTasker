@@ -83,7 +83,7 @@ window.checkAchievements = function() {
         if(window.loadShop) window.loadShop();
 
         if(window.firebase) {
-            firebase.database().ref('users/' + user.uid).update({
+            firebase.database().ref('users/' + user.name).update({
                 points: user.points,
                 unlockedAchievements: user.unlockedAchievements
             });

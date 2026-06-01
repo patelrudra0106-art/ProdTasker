@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './css/style.css',
+  './js/firebase-config.js',
   './js/app.js',
   './js/pomodoro.js',
   './manifest.json',
@@ -17,6 +18,7 @@ const ASSETS_TO_CACHE = [
   './js/shop.js',
   './js/chat.js',          
   './js/achievements.js',
+  './js/tasks.js',
   './js/onboarding.js',
   
   // Assets

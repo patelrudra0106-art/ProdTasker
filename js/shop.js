@@ -171,7 +171,7 @@ window.buyItem = async function(itemId) {
 
     try {
         if(window.firebase) {
-            await firebase.database().ref('users/' + user.uid).update({
+            await firebase.database().ref('users/' + user.name).update({
                 points: user.points,
                 inventory: user.inventory || [],
                 lastTaskDate: user.lastTaskDate || null

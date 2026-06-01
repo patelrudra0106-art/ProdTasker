@@ -12,26 +12,34 @@ window.initChatNotifications = function() {
     notificationListeners.forEach(off => off());
     notificationListeners = [];
 
-    user.friends.forEach(friendUid => {
-        const chatId = getChatId(user.uid, friendUid);
+    user.friends.forEach(friendName => {
+        const chatId = getChatId(user.name, friendName);
         const ref = firebase.database().ref(`chats/${chatId}/messages`).limitToLast(1);
         
         const listener = ref.on('child_added', (snapshot) => {
             const msg = snapshot.val();
             if (!msg) return;
 
+            // Check if message is new (within last 5 seconds)
             const isNew = (Date.now() - msg.timestamp) < 5000; 
             
-            if (isNew && msg.senderUid !== user.uid && currentChatFriend !== friendUid) {
+            // Trigger Notification ONLY if:
+            // 1. Message is new
+            // 2. Sender is not me
+            // 3. I am not currently looking at this chat
+            if (isNew && msg.sender !== user.name && currentChatFriend !== friendName) {
                 
+                // If we are currently looking at the "Chats" list, refresh it to show new message
                 if (window.socialViewMode === 'chats' && window.renderChatInbox) {
                     window.renderChatInbox();
                 }
 
+                // POPUP NOTIFICATION
                 if (window.showNotification) {
-                    window.showNotification(`New Message`, msg.text, 'info');
+                    window.showNotification(`Message from ${friendName}`, msg.text, 'info');
                 }
                 
+                // Sound
                 const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2345/2345-preview.mp3'); 
                 audio.volume = 0.2;
                 audio.play().catch(()=>{});
@@ -48,14 +56,15 @@ function getChatId(userA, userB) {
     return [userA, userB].sort().join('_');
 }
 
-window.openChat = function(friendUid, friendName = "Agent") {
+window.openChat = function(friendName) {
     const user = JSON.parse(localStorage.getItem('auraUser'));
     if (!user) return alert("Login required.");
 
+    // Close Friend Modal if open
     const friendModal = document.getElementById('friend-modal');
     if (friendModal) friendModal.classList.add('hidden');
 
-    currentChatFriend = friendUid;
+    currentChatFriend = friendName;
     
     const modal = document.getElementById('chat-modal');
     const title = document.getElementById('chat-title');
@@ -65,34 +74,38 @@ window.openChat = function(friendUid, friendName = "Agent") {
     if (modal) modal.classList.remove('hidden');
     if (title) title.textContent = friendName;
     
+    // Loading State
     if (messagesBox) messagesBox.innerHTML = '<div class="text-center py-4 opacity-50"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto"></i></div>';
     
     if (input) setTimeout(() => input.focus(), 100);
     if(window.lucide) lucide.createIcons();
 
-    loadChatHistory(user.uid, friendUid);
+    loadChatHistory(user.name, friendName);
 };
 
 window.closeChat = function() {
     const modal = document.getElementById('chat-modal');
     if (modal) modal.classList.add('hidden');
     
+    // Detach listener for the specific chat window
     if (chatListener && currentChatFriend) {
         const user = JSON.parse(localStorage.getItem('auraUser'));
         if (user) {
-            const chatId = getChatId(user.uid, currentChatFriend);
+            const chatId = getChatId(user.name, currentChatFriend);
             firebase.database().ref(`chats/${chatId}/messages`).off('value', chatListener);
         }
     }
     currentChatFriend = null;
 
+    // --- NEW: Refresh Inbox List on Close ---
+    // This ensures your sent message shows up as the "Latest" immediately
     if (window.socialViewMode === 'chats' && window.renderChatInbox) {
         window.renderChatInbox();
     }
 };
 
-function loadChatHistory(myUid, friendUid) {
-    const chatId = getChatId(myUid, friendUid);
+function loadChatHistory(myName, friendName) {
+    const chatId = getChatId(myName, friendName);
     const messagesBox = document.getElementById('chat-messages');
     
     // Load last 50 messages
@@ -109,7 +122,7 @@ function loadChatHistory(myUid, friendUid) {
         }
 
         Object.values(data).forEach(msg => {
-            const isMe = msg.senderUid === myUid;
+            const isMe = msg.sender === myName;
             
             const div = document.createElement('div');
             div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-3 animate-fade-in`;
@@ -152,11 +165,11 @@ window.sendChatMessage = function() {
     const user = JSON.parse(localStorage.getItem('auraUser'));
     if (!user || !currentChatFriend) return;
 
-    const chatId = getChatId(user.uid, currentChatFriend);
+    const chatId = getChatId(user.name, currentChatFriend);
     const newMsgRef = firebase.database().ref(`chats/${chatId}/messages`).push();
 
     newMsgRef.set({
-        senderUid: user.uid,
+        sender: user.name,
         text: text,
         timestamp: firebase.database.ServerValue.TIMESTAMP
     });

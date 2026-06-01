@@ -37,7 +37,7 @@ window.switchReportTab = function(type) {
 function getReportStorageKey() {
     const user = JSON.parse(localStorage.getItem('auraUser'));
     if (user && user.name) {
-        return `auraTasks_${user.uid}`;
+        return `auraTasks_${user.name}`;
     }
     return 'auraTasks_guest';
 }

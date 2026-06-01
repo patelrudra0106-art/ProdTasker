@@ -64,19 +64,23 @@
                     <span class="animate-title inline-block">Enter Workspace</span>
                 </h2>
                 <form onsubmit="handleAuth(event)" class="space-y-4">
-                    <button type="submit" id="auth-submit" class="btn-s1n w-full mt-4 flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24">
-                            <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                            <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                        </svg>
-                        Sign in with Google
-                    </button>
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-muted uppercase tracking-widest">Username</label>
+                        <input type="text" id="auth-name" required class="input-s1n" placeholder="name_01">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-muted uppercase tracking-widest">Password</label>
+                        <input type="password" id="auth-pass" required class="input-s1n" placeholder="••••••••">
+                    </div>
+                    <div id="field-confirm-pass" class="hidden space-y-1.5 animate-fade-in">
+                        <label class="text-[10px] font-bold text-muted uppercase tracking-widest">Confirm</label>
+                        <input type="password" id="auth-confirm-pass" class="input-s1n" placeholder="••••••••">
+                    </div>
+                    <button type="submit" id="auth-submit" class="btn-s1n w-full mt-4">Log in </button>
                 </form>
                 <div class="mt-8 pt-6 border-t border-border">
                     <p id="toggle-auth-mode" class="text-sm text-center text-muted">
-                        Secure Authentication via Google
+                        New agent? <span class="text-main font-bold cursor-pointer hover:underline" onclick="toggleAuthMode()">Create ID</span>
                     </p>
                 </div>
             </div>
@@ -121,6 +125,15 @@
                     </div>
 
                     <div class="border-b border-border">
+                        <button onclick="toggleChangePass()" class="w-full flex items-center justify-between p-4 hover:bg-input transition-colors text-left">
+                            <span class="text-xs font-bold uppercase tracking-wider text-main">Change Password</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
+                        </button>
+                        <div id="change-pass-form" class="hidden bg-input p-4 border-t border-border space-y-3 animate-fade-in">
+                            <input type="password" id="cp-old" placeholder="Current Key" class="input-s1n py-2 text-xs bg-card">
+                            <input type="password" id="cp-new" placeholder="New Key" class="input-s1n py-2 text-xs bg-card">
+                            <button onclick="submitChangePass()" id="cp-btn" class="btn-s1n w-full py-2 text-xs">Update Password</button>
+                        </div>
                     </div>
 
                     <button onclick="exportUserData()" class="w-full flex items-center justify-between p-4 hover:bg-input transition-colors border-b border-border text-left">
@@ -528,23 +541,8 @@
     <audio id="alarm-sound" preload="auto"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg"></audio>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyCq2wOw4L_bVUC4rINviWMBGjEtOALmgnE",
-          authDomain: "auratask-fffd1.firebaseapp.com",
-          databaseURL: "https://auratask-fffd1-default-rtdb.firebaseio.com",
-          projectId: "auratask-fffd1",
-          storageBucket: "auratask-fffd1.firebasestorage.app",
-          messagingSenderId: "521351004914",
-          appId: "1:521351004914:web:85825ddda114241372866b",
-          measurementId: "G-4D1Q3FE9NK"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-    </script>
-    
+    <script src="js/firebase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/social.js"></script>
     <script src="js/chat.js"></script>

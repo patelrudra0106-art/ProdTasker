@@ -214,34 +214,34 @@ window.closeAccount = function() {
 };
 
 // --- DATA EXPORT ---
-window.exportUserData = async function() {
+window.exportUserData = function() {
     const user = JSON.parse(localStorage.getItem('auraUser'));
     if (!user) return alert("No identity found.");
 
-    try {
-        const snapshot = await firebase.database().ref('users/' + user.uid).once('value');
-        const exportData = {
-            _generated: new Date().toISOString(),
-            identity: user,
-            profile: JSON.parse(localStorage.getItem('auraProfile')),
-            stats: JSON.parse(localStorage.getItem('auraStats')),
-            settings: JSON.parse(localStorage.getItem('auraTimerSettings')),
-            history: JSON.parse(localStorage.getItem('auraHistory')),
-            tasks: snapshot.val()?.tasks || {}
-        };
+    const exportData = {
+        _generated: new Date().toISOString(),
+        identity: user,
+        profile: JSON.parse(localStorage.getItem('auraProfile')),
+        stats: JSON.parse(localStorage.getItem('auraStats')),
+        settings: JSON.parse(localStorage.getItem('auraTimerSettings')),
+        history: JSON.parse(localStorage.getItem('auraHistory')),
+        tasks: {}
+    };
 
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", `S1N_BACKUP_${user.name}_${new Date().toISOString().slice(0,10)}.json`);
-        document.body.appendChild(downloadAnchorNode); 
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-
-        if(window.showNotification) window.showNotification("Backup Complete", "Data package downloaded.", "success");
-    } catch (e) {
-        alert("Failed to export data.");
+    const taskKey = `auraTasks_${user.name}`;
+    if (localStorage.getItem(taskKey)) {
+        exportData.tasks = JSON.parse(localStorage.getItem(taskKey));
     }
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `S1N_BACKUP_${user.name}_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(downloadAnchorNode); 
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+
+    if(window.showNotification) window.showNotification("Backup Complete", "Data package downloaded.", "success");
 };
 
 // --- PASSWORD RESET LOGIC ---
@@ -275,7 +275,14 @@ window.submitChangePass = async function() {
     btn.disabled = true;
 
     try {
-        await firebase.database().ref('users/' + user.uid).update({
+        const snapshot = await firebase.database().ref('users/' + user.name).once('value');
+        const dbUser = snapshot.val();
+        
+        if (!dbUser || dbUser.password !== oldPass) {
+            throw new Error("Incorrect current password.");
+        }
+
+        await firebase.database().ref('users/' + user.name).update({
             password: newPass
         });
 

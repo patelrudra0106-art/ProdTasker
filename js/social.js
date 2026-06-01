@@ -183,8 +183,7 @@ function renderLeaderboard(filter = '') {
         let users = [];
         if (data) {
              users = Object.entries(data).map(([key, value]) => {
-                if (!value.uid) { value.uid = key; }
-                if (!value.name) { value.name = "Unknown Agent"; }
+                if (!value.name) { value.name = key; }
                 return value;
             });
         }
@@ -213,7 +212,7 @@ function renderLeaderboard(filter = '') {
 
         if (socialViewMode === 'friends' && myUser) {
             const myFriends = myUser.friends || [];
-            users = users.filter(u => myFriends.includes(u.uid) || u.uid === myUser.uid);
+            users = users.filter(u => myFriends.includes(u.name) || u.name === myUser.name);
         }
         
         if (filter) {
@@ -230,9 +229,9 @@ function renderLeaderboard(filter = '') {
         }
 
         users.forEach((user, index) => {
-            const isMe = myUser && user.uid === myUser.uid;
-            const isFriend = myUser && myUser.friends && myUser.friends.includes(user.uid);
-            const requestSent = user.requests && user.requests[myUser.uid];
+            const isMe = myUser && user.name === myUser.name;
+            const isFriend = myUser && myUser.friends && myUser.friends.includes(user.name);
+            const requestSent = user.requests && user.requests[myUser.name];
             
             // Rank Badge
             const rank = index + 1;
@@ -244,15 +243,15 @@ function renderLeaderboard(filter = '') {
             // Buttons Logic
             let buttonsHtml = '';
             if (!isMe) {
-                const profileBtn = `<button onclick="viewFriendProfile('${user.uid}')" class="p-2 text-muted hover:text-main hover:bg-input rounded-md transition-colors" title="Profile"><i data-lucide="user" class="w-4 h-4"></i></button>`;
+                const profileBtn = `<button onclick="viewFriendProfile('${user.name}')" class="p-2 text-muted hover:text-main hover:bg-input rounded-md transition-colors" title="Profile"><i data-lucide="user" class="w-4 h-4"></i></button>`;
                 
                 let actionBtn = '';
                 if (isFriend) {
-                    actionBtn = `<button onclick="openChat('${user.uid}', '${user.name.replace(/'/g, "\\'")}')" class="p-2 text-main hover:bg-input rounded-md transition-colors" title="Chat"><i data-lucide="message-circle" class="w-4 h-4"></i></button>`;
+                    actionBtn = `<button onclick="openChat('${user.name}')" class="p-2 text-main hover:bg-input rounded-md transition-colors" title="Chat"><i data-lucide="message-circle" class="w-4 h-4"></i></button>`;
                 } else if (requestSent) {
                     actionBtn = `<button disabled class="p-2 text-muted opacity-50 cursor-not-allowed" title="Pending"><i data-lucide="clock" class="w-4 h-4"></i></button>`;
                 } else {
-                    actionBtn = `<button onclick="sendFriendRequest('${user.uid}')" class="p-2 text-muted hover:text-main hover:bg-input rounded-md transition-colors" title="Add"><i data-lucide="user-plus" class="w-4 h-4"></i></button>`;
+                    actionBtn = `<button onclick="sendFriendRequest('${user.name}')" class="p-2 text-muted hover:text-main hover:bg-input rounded-md transition-colors" title="Add"><i data-lucide="user-plus" class="w-4 h-4"></i></button>`;
                 }
                 buttonsHtml = `<div class="flex items-center gap-1">${profileBtn}${actionBtn}</div>`;
             } else {
@@ -306,21 +305,15 @@ async function renderChatInbox() {
 
     const getChatId = (u1, u2) => [u1, u2].sort().join('_');
 
-    const chatPromises = currentUser.friends.map(async (friendUid) => {
-        const chatId = getChatId(currentUser.uid, friendUid);
-        
-        // Fetch friend details to get the name
-        const friendSnap = await firebase.database().ref(`users/${friendUid}`).once('value');
-        const friendData = friendSnap.val() || {};
-        const friendName = friendData.name || "Unknown Agent";
-
+    const chatPromises = currentUser.friends.map(async (friendName) => {
+        const chatId = getChatId(currentUser.name, friendName);
         const snap = await firebase.database().ref(`chats/${chatId}/messages`).limitToLast(1).once('value');
         const msgs = snap.val();
         let lastMsg = null;
         if (msgs) {
             lastMsg = Object.values(msgs)[0];
         }
-        return { friendUid, friendName, lastMsg };
+        return { friendName, lastMsg };
     });
 
     const results = await Promise.all(chatPromises);
@@ -335,13 +328,13 @@ async function renderChatInbox() {
     socialList.innerHTML = '';
 
     results.forEach(item => {
-        const { friendUid, friendName, lastMsg } = item;
+        const { friendName, lastMsg } = item;
         
         let subText = "Start a conversation";
         let timeText = "";
         
         if (lastMsg) {
-            const isMe = lastMsg.senderUid === currentUser.uid;
+            const isMe = lastMsg.sender === currentUser.name;
             const prefix = isMe ? "You: " : "";
             subText = prefix + (lastMsg.text.length > 30 ? lastMsg.text.substring(0, 30) + '...' : lastMsg.text);
             
@@ -354,7 +347,7 @@ async function renderChatInbox() {
 
         const div = document.createElement('div');
         div.className = "flex items-center justify-between p-3 rounded-xl hover:bg-input transition-all cursor-pointer animate-slide-in mb-1 border border-transparent hover:border-border";
-        div.onclick = () => window.openChat(friendUid, friendName.replace(/'/g, "\\'"));
+        div.onclick = () => window.openChat(friendName);
 
         div.innerHTML = `
             <div class="flex items-center gap-4 w-full">
@@ -387,7 +380,7 @@ function listenForRequests() {
     if (!currentUser) return;
 
     if (requestListener) {
-        firebase.database().ref(`users/${currentUser.uid}/requests`).off('value', requestListener);
+        firebase.database().ref(`users/${currentUser.name}/requests`).off('value', requestListener);
     }
 
     let reqContainer = document.getElementById('requests-container');
@@ -404,7 +397,7 @@ function listenForRequests() {
         socialList.parentNode.insertBefore(reqContainer, socialList);
     }
 
-    const reqRef = firebase.database().ref(`users/${currentUser.uid}/requests`);
+    const reqRef = firebase.database().ref(`users/${currentUser.name}/requests`);
     requestListener = reqRef.on('value', (snapshot) => {
         const requests = snapshot.val();
         const list = document.getElementById('requests-list');
@@ -418,8 +411,7 @@ function listenForRequests() {
         if(container) container.classList.remove('hidden');
         if(list) list.innerHTML = '';
 
-        Object.entries(requests).forEach(([senderUid, requestData]) => {
-            const senderName = requestData.name || "Unknown Agent";
+        Object.keys(requests).forEach(senderName => {
             const div = document.createElement('div');
             div.className = "flex justify-between items-center p-3 bg-input border border-border rounded-xl shadow-sm mb-2";
             div.innerHTML = `
@@ -433,10 +425,10 @@ function listenForRequests() {
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="acceptRequest('${senderUid}')" class="p-2 bg-main text-body rounded-lg hover:opacity-90 transition-opacity">
+                    <button onclick="acceptRequest('${senderName}')" class="p-2 bg-main text-body rounded-lg hover:opacity-90 transition-opacity">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i>
                     </button>
-                    <button onclick="rejectRequest('${senderUid}')" class="p-2 border border-border text-muted rounded-lg hover:text-rose-500 hover:bg-card transition-colors">
+                    <button onclick="rejectRequest('${senderName}')" class="p-2 border border-border text-muted rounded-lg hover:text-rose-500 hover:bg-card transition-colors">
                         <i data-lucide="x" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
@@ -448,48 +440,48 @@ function listenForRequests() {
 }
 
 // ... (Existing helper functions: sendFriendRequest, acceptRequest, rejectRequest, removeFriend, viewFriendProfile remain unchanged) ...
-window.sendFriendRequest = function(targetUid) {
+window.sendFriendRequest = function(targetName) {
     const currentUser = JSON.parse(localStorage.getItem('auraUser'));
     if (!currentUser) return alert("Login required.");
-    firebase.database().ref(`users/${targetUid}/requests/${currentUser.uid}`).set({name: currentUser.name})
+    firebase.database().ref(`users/${targetName}/requests/${currentUser.name}`).set(true)
     .then(() => {
-        if(window.showNotification) window.showNotification("Sent", `Request sent.`, "success");
+        if(window.showNotification) window.showNotification("Sent", `Request sent to ${targetName}`, "success");
         if(friendViewMode === 'list') renderLeaderboard(searchInput ? searchInput.value : '');
     })
     .catch(err => alert("Error: " + err.message));
 };
 
-window.acceptRequest = async function(senderUid) {
+window.acceptRequest = async function(senderName) {
     const currentUser = JSON.parse(localStorage.getItem('auraUser'));
     if (!currentUser) return;
     try {
         if (!currentUser.friends) currentUser.friends = [];
-        if (!currentUser.friends.includes(senderUid)) currentUser.friends.push(senderUid);
+        if (!currentUser.friends.includes(senderName)) currentUser.friends.push(senderName);
         localStorage.setItem('auraUser', JSON.stringify(currentUser));
-        await firebase.database().ref(`users/${currentUser.uid}`).update({ friends: currentUser.friends });
-        const senderSnap = await firebase.database().ref(`users/${senderUid}/friends`).get();
+        await firebase.database().ref(`users/${currentUser.name}`).update({ friends: currentUser.friends });
+        const senderSnap = await firebase.database().ref(`users/${senderName}/friends`).get();
         let senderFriends = senderSnap.val() || [];
-        if(!senderFriends.includes(currentUser.uid)) {
-            senderFriends.push(currentUser.uid);
-            await firebase.database().ref(`users/${senderUid}`).update({ friends: senderFriends });
+        if(!senderFriends.includes(currentUser.name)) {
+            senderFriends.push(currentUser.name);
+            await firebase.database().ref(`users/${senderName}`).update({ friends: senderFriends });
         }
-        await firebase.database().ref(`users/${currentUser.uid}/requests/${senderUid}`).remove();
-        if(window.showNotification) window.showNotification("Connected", `You are now friends.`, "success");
+        await firebase.database().ref(`users/${currentUser.name}/requests/${senderName}`).remove();
+        if(window.showNotification) window.showNotification("Connected", `You are now friends with ${senderName}`, "success");
         if(friendViewMode === 'list') renderLeaderboard(searchInput ? searchInput.value : '');
     } catch(err) { alert("Sync Error: " + err.message); }
 };
 
-window.rejectRequest = function(senderUid) {
+window.rejectRequest = function(senderName) {
     const currentUser = JSON.parse(localStorage.getItem('auraUser'));
-    firebase.database().ref(`users/${currentUser.uid}/requests/${senderUid}`).remove();
+    firebase.database().ref(`users/${currentUser.name}/requests/${senderName}`).remove();
 };
 
-window.removeFriend = function(targetUid) {
+window.removeFriend = function(targetName) {
     const currentUser = JSON.parse(localStorage.getItem('auraUser'));
-    if (confirm(`Disconnect from user?`)) {
-        currentUser.friends = currentUser.friends.filter(uid => uid !== targetUid);
+    if (confirm(`Disconnect from ${targetName}?`)) {
+        currentUser.friends = currentUser.friends.filter(name => name !== targetName);
         localStorage.setItem('auraUser', JSON.stringify(currentUser));
-        firebase.database().ref('users/' + currentUser.uid).update({ friends: currentUser.friends })
+        firebase.database().ref('users/' + currentUser.name).update({ friends: currentUser.friends })
         .then(() => {
             document.getElementById('friend-modal').classList.add('hidden');
             if(friendViewMode === 'list') renderLeaderboard(searchInput ? searchInput.value : '');
@@ -497,14 +489,14 @@ window.removeFriend = function(targetUid) {
     }
 };
 
-window.viewFriendProfile = function(targetUid) {
+window.viewFriendProfile = function(targetName) {
     const modal = document.getElementById('friend-modal');
     const content = document.getElementById('friend-modal-content');
     if(!modal || !content) return;
     modal.classList.remove('hidden');
     content.innerHTML = '<div class="text-center py-8 opacity-50"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto"></i></div>';
     if(window.lucide) lucide.createIcons();
-    firebase.database().ref('users/' + targetUid).once('value').then((snapshot) => {
+    firebase.database().ref('users/' + targetName).once('value').then((snapshot) => {
         const user = snapshot.val();
         if (!user) { content.innerHTML = '<p class="text-center">Error</p>'; return; }
         
@@ -521,7 +513,7 @@ window.viewFriendProfile = function(targetUid) {
         }
 
         const currentUser = JSON.parse(localStorage.getItem('auraUser'));
-        const isFriend = currentUser && currentUser.friends && currentUser.friends.includes(targetUid);
+        const isFriend = currentUser && currentUser.friends && currentUser.friends.includes(targetName);
 
         content.innerHTML = `
             <div class="flex justify-between items-start mb-6">
@@ -537,9 +529,9 @@ window.viewFriendProfile = function(targetUid) {
             </div>
             ${badgesHtml}
             ${isFriend ? 
-                `<div class="grid grid-cols-2 gap-2"><button onclick="openChat('${targetUid}', '${user.name.replace(/'/g, "\\'")}'); document.getElementById('friend-modal').classList.add('hidden')" class="btn-s1n w-full py-3 text-xs uppercase">Message</button><button onclick="removeFriend('${targetUid}')" class="w-full py-3 border border-rose-200 text-rose-500 font-bold text-xs uppercase rounded-xl">Disconnect</button></div>` 
+                `<div class="grid grid-cols-2 gap-2"><button onclick="openChat('${user.name}'); document.getElementById('friend-modal').classList.add('hidden')" class="btn-s1n w-full py-3 text-xs uppercase">Message</button><button onclick="removeFriend('${user.name}')" class="w-full py-3 border border-rose-200 text-rose-500 font-bold text-xs uppercase rounded-xl">Disconnect</button></div>` 
                 : 
-                `<button onclick="sendFriendRequest('${targetUid}'); document.getElementById('friend-modal').classList.add('hidden')" class="btn-s1n w-full py-3 text-xs uppercase tracking-wider">Send Request</button>`
+                `<button onclick="sendFriendRequest('${user.name}'); document.getElementById('friend-modal').classList.add('hidden')" class="btn-s1n w-full py-3 text-xs uppercase tracking-wider">Send Request</button>`
             }
         `;
         if(window.lucide) lucide.createIcons();

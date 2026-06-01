@@ -6,7 +6,7 @@ let currentFilter = 'all';
 window.loadTasks = function() {
     const user = JSON.parse(localStorage.getItem('auraUser'));
     const guestKey = 'auraTasks_guest';
-    const userKey = user ? `auraTasks_${user.uid}` : guestKey;
+    const userKey = user ? `auraTasks_${user.name}` : guestKey;
     
     // Load from LocalStorage
     window.tasks = JSON.parse(localStorage.getItem(userKey)) || [];
@@ -142,7 +142,7 @@ window.deleteTask = function(id) {
 
 function saveTasks() {
     const user = JSON.parse(localStorage.getItem('auraUser'));
-    const key = user ? `auraTasks_${user.uid}` : 'auraTasks_guest';
+    const key = user ? `auraTasks_${user.name}` : 'auraTasks_guest';
     localStorage.setItem(key, JSON.stringify(window.tasks));
 }
 

@@ -9,6 +9,13 @@ const authOverlay = document.getElementById('auth-overlay');
 const mainApp = document.getElementById('main-app');
 const authTitle = document.getElementById('auth-title');
 const authSubmitBtn = document.getElementById('auth-submit');
+const toggleAuthText = document.getElementById('toggle-auth-mode');
+const nameInput = document.getElementById('auth-name');
+const passInput = document.getElementById('auth-pass');
+const confirmPassField = document.getElementById('field-confirm-pass');
+const confirmPassInput = document.getElementById('auth-confirm-pass');
+
+let isLoginMode = true;
 
 // --- INIT ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -172,7 +179,7 @@ window.loadAdminPanel = function(filter = '') {
 
             const isAdmin = user.name === 'Owner';
             const isBanned = user.isBanned === true; 
-            const safeUid = (user.uid || '').replace(/'/g, "\\'"); 
+            const safeName = user.name.replace(/'/g, "\\'"); 
             
             const rowClass = isBanned 
                 ? "border-border opacity-60" 
@@ -191,17 +198,25 @@ window.loadAdminPanel = function(filter = '') {
                             ${user.name} 
                         </p>
                         <p class="text-[10px] text-muted font-mono">PTS: ${user.points || 0}</p>
+                        
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <p id="pass-${safeName}" class="text-[10px] text-muted font-mono tracking-widest">••••••</p>
+                            <button onclick="togglePassVisibility('${safeName}', '${user.password}')" class="text-muted hover:text-main"><i data-lucide="eye" class="w-3 h-3"></i></button>
+                        </div>
                     </div>
                 </div>
                 ${!isAdmin ? `
                 <div class="flex gap-1">
-                    <button onclick="adminEditPoints('${safeUid}', ${user.points || 0})" class="p-2 text-muted hover:text-main hover:bg-input rounded-md transition-colors" title="Edit Stats">
+                    <button onclick="adminResetPass('${safeName}')" class="p-2 text-muted hover:text-main hover:bg-input rounded-md transition-colors" title="Reset Key">
+                        <i data-lucide="key" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="adminEditPoints('${safeName}', ${user.points || 0})" class="p-2 text-muted hover:text-main hover:bg-input rounded-md transition-colors" title="Edit Stats">
                         <i data-lucide="pencil" class="w-4 h-4"></i>
                     </button>
-                    <button onclick="adminToggleBan('${safeUid}', ${isBanned})" class="p-2 ${isBanned ? 'text-emerald-500' : 'text-muted hover:text-rose-500'} hover:bg-input rounded-md transition-colors" title="${isBanned ? 'Restore' : 'Suspend'}">
+                    <button onclick="adminToggleBan('${safeName}', ${isBanned})" class="p-2 ${isBanned ? 'text-emerald-500' : 'text-muted hover:text-rose-500'} hover:bg-input rounded-md transition-colors" title="${isBanned ? 'Restore' : 'Suspend'}">
                         <i data-lucide="${isBanned ? 'check-circle' : 'ban'}" class="w-4 h-4"></i>
                     </button>
-                    <button onclick="adminDeleteUser('${safeUid}')" class="p-2 text-muted hover:text-rose-500 hover:bg-input rounded-md transition-colors" title="Purge">
+                    <button onclick="adminDeleteUser('${safeName}')" class="p-2 text-muted hover:text-rose-500 hover:bg-input rounded-md transition-colors" title="Purge">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -332,10 +347,22 @@ window.togglePassVisibility = function(elementId, password) {
     }
 };
 
-window.adminToggleBan = function(targetUid, currentStatus) {
+window.adminResetPass = function(targetName) {
+    const newPass = prompt(`Reset Key for ${targetName}:`);
+    if (newPass && newPass.trim() !== "") {
+        firebase.database().ref('users/' + targetName).update({
+            password: newPass.trim()
+        }).then(() => {
+            alert("Key Updated.");
+            loadAdminPanel();
+        });
+    }
+};
+
+window.adminToggleBan = function(targetName, currentStatus) {
     const action = currentStatus ? "RESTORE" : "SUSPEND";
-    if (confirm(`${action} access for user?`)) {
-        firebase.database().ref('users/' + targetUid).update({
+    if (confirm(`${action} access for ${targetName}?`)) {
+        firebase.database().ref('users/' + targetName).update({
             isBanned: !currentStatus
         }).then(() => {
             loadAdminPanel();
@@ -343,17 +370,17 @@ window.adminToggleBan = function(targetUid, currentStatus) {
     }
 };
 
-window.adminEditPoints = async function(targetUid, currentDisplayPoints) {
+window.adminEditPoints = async function(targetName, currentDisplayPoints) {
     if (!currentUser || currentUser.name !== 'Owner') return;
 
-    const newPointsStr = prompt(`Set TOTAL Credits for user:`, currentDisplayPoints);
+    const newPointsStr = prompt(`Set TOTAL Credits for ${targetName}:`, currentDisplayPoints);
     if (newPointsStr === null || newPointsStr.trim() === "") return;
 
     const newPoints = parseInt(newPointsStr);
     if (isNaN(newPoints)) return alert("Invalid Format.");
 
     try {
-        const snap = await firebase.database().ref('users/' + targetUid).get();
+        const snap = await firebase.database().ref('users/' + targetName).get();
         const data = snap.val();
         if (!data) return;
 
@@ -362,7 +389,7 @@ window.adminEditPoints = async function(targetUid, currentDisplayPoints) {
         const diff = newPoints - oldPoints;
         const newMonthly = Math.max(0, oldMonthly + diff);
 
-        await firebase.database().ref('users/' + targetUid).update({
+        await firebase.database().ref('users/' + targetName).update({
             points: newPoints,
             monthlyPoints: newMonthly
         });
@@ -373,12 +400,33 @@ window.adminEditPoints = async function(targetUid, currentDisplayPoints) {
     }
 };
 
-window.adminDeleteUser = function(targetUid) {
+window.adminDeleteUser = function(targetName) {
     if (!currentUser || currentUser.name !== 'Owner') return;
+    if (targetName === 'Owner') return alert("Protected User.");
     
-    if (confirm(`⚠️ PERMANENTLY PURGE USER?`)) {
-        firebase.database().ref('users/' + targetUid).remove()
+    if (confirm(`⚠️ PERMANENTLY PURGE "${targetName}"?`)) {
+        firebase.database().ref('users/' + targetName).remove()
         .then(() => loadAdminPanel());
+    }
+};
+
+// --- TOGGLE LOGIN / SIGNUP ---
+window.toggleAuthMode = function() {
+    isLoginMode = !isLoginMode;
+    if (isLoginMode) {
+        // ANIMATED TITLE SWITCH
+        authTitle.innerHTML = '<span class="animate-title inline-block">Enter Workspace</span>';
+        
+        authSubmitBtn.textContent = "Initialize Session";
+        toggleAuthText.innerHTML = "New agent? <span class='text-main font-bold cursor-pointer hover:underline' onclick='toggleAuthMode()'>Create ID</span>";
+        confirmPassField.classList.add('hidden');
+    } else {
+        // ANIMATED TITLE SWITCH
+        authTitle.innerHTML = '<span class="animate-title inline-block">New Registration</span>';
+        
+        authSubmitBtn.textContent = "Create Identity";
+        toggleAuthText.innerHTML = "Have ID? <span class='text-main font-bold cursor-pointer hover:underline' onclick='toggleAuthMode()'>Log In</span>";
+        confirmPassField.classList.remove('hidden');
     }
 };
 
@@ -386,32 +434,44 @@ window.adminDeleteUser = function(targetUid) {
 window.handleAuth = async function(e) {
     e.preventDefault();
     
+    const name = nameInput.value.trim().replace(/[.#$/[\]]/g, ""); 
+    const password = passInput.value;
+    const confirmPass = confirmPassInput.value;
+
+    if (!name || !password) return alert("Credentials missing.");
+    if (name.toLowerCase() === 'undefined' || name.toLowerCase() === 'null') return alert("Invalid ID.");
+
     authSubmitBtn.disabled = true;
     authSubmitBtn.textContent = "Processing...";
     
-    const provider = new firebase.auth.GoogleAuthProvider();
-    
-    try {
-        const result = await firebase.auth().signInWithPopup(provider);
-        const user = result.user;
-        const uid = user.uid;
-        const name = user.displayName || user.email.split('@')[0];
+    const userRef = firebase.database().ref('users/' + name);
 
-        const userRef = firebase.database().ref('users/' + uid);
+    try {
         const snapshot = await userRef.get();
         const userData = snapshot.val();
 
-        if (userData) {
-            if (userData.isBanned) {
-                throw new Error("ACCESS DENIED. ID SUSPENDED.");
+        if (isLoginMode) {
+            if (userData) {
+                if (userData.isBanned) {
+                    throw new Error("ACCESS DENIED. ID SUSPENDED.");
+                }
+                if (userData.password === password) {
+                    loginUser(userData);
+                    window.location.reload(); 
+                } else {
+                    throw new Error("Authentication Failed.");
+                }
+            } else {
+                throw new Error("ID not found.");
             }
-            loginUser({...userData, uid: uid, name: name});
-            window.location.reload(); 
         } else {
             // --- SIGN UP LOGIC ---
+            if (password !== confirmPass) throw new Error("Key Mismatch.");
+            if (userData) throw new Error("ID Taken.");
+
             const newUser = {
-                uid: uid,
                 name: name,
+                password: password,
                 points: 0,
                 monthlyPoints: 0,
                 streak: 0,
@@ -434,15 +494,7 @@ window.handleAuth = async function(e) {
     } catch (error) {
         alert(error.message);
         authSubmitBtn.disabled = false;
-        authSubmitBtn.innerHTML = `
-            <svg class="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Sign in with Google
-        `;
+        authSubmitBtn.textContent = isLoginMode ? "Initialize Session" : "Create Identity";
     }
 };
 
@@ -470,7 +522,7 @@ window.syncUserToDB = function(newPoints, newStreak, monthlyPoints, lastActiveMo
     if (!currentUser) return;
 
     const stats = JSON.parse(localStorage.getItem('auraStats')) || { minutes: 0, sessions: 0 };
-    const taskKey = `auraTasks_${currentUser.uid}`;
+    const taskKey = `auraTasks_${currentUser.name}`;
     const tasks = JSON.parse(localStorage.getItem(taskKey)) || [];
     
     // FETCH LOCAL DATA TO ENSURE SYNC
@@ -508,7 +560,7 @@ window.syncUserToDB = function(newPoints, newStreak, monthlyPoints, lastActiveMo
         lastActiveMonth = p.lastActiveMonth || new Date().toISOString().slice(0, 7);
     }
 
-    firebase.database().ref('users/' + currentUser.uid).update({
+    firebase.database().ref('users/' + currentUser.name).update({
         points: newPoints,
         streak: newStreak,
         monthlyPoints: monthlyPoints,
@@ -524,8 +576,7 @@ window.syncUserToDB = function(newPoints, newStreak, monthlyPoints, lastActiveMo
 };
 
 function listenToStats() {
-    if (!currentUser || !currentUser.uid) return;
-    firebase.database().ref('users/' + currentUser.uid).on('value', (snapshot) => {
+    firebase.database().ref('users/' + currentUser.name).on('value', (snapshot) => {
         const data = snapshot.val();
         if(data) {
              if (data.isBanned) {
@@ -572,28 +623,18 @@ function listenToStats() {
 
 window.logout = function() {
     if(confirm("Terminating Session. Confirm?")) {
-        firebase.auth().signOut().then(() => {
-            localStorage.removeItem('auraUser');
-            window.location.reload();
-        });
+        localStorage.removeItem('auraUser');
+        window.location.reload();
     }
 };
 
 window.deleteAccount = function() {
-    if(!currentUser || !currentUser.uid) return;
+    if(!currentUser) return;
     if(confirm("⚠️ WARNING: This will permanently purge your Identity.")) {
-        firebase.database().ref('users/' + currentUser.uid).remove()
+        firebase.database().ref('users/' + currentUser.name).remove()
         .then(() => {
-            const user = firebase.auth().currentUser;
-            if (user) {
-                user.delete().then(() => {
-                    localStorage.clear();
-                    window.location.reload();
-                });
-            } else {
-                localStorage.clear();
-                window.location.reload();
-            }
+            localStorage.clear();
+            window.location.reload();
         });
     }
 };
