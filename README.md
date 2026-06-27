@@ -10,20 +10,21 @@ S1N Productive is a web-based application designed to gamify the "Deep Work" exp
 
 #### 1. Task Protocol 📋
 * **Daily Cap:** Limit of 5 active protocols per day.
+* **AI Breakdown:** Seamlessly break down large goals into 5 actionable sub-tasks using Groq LLaMA 3 integration.
 * **Ledger System:** Earn credits for on-time completion; lose credits for delays.
 * **Strict Deletion:** Deleting tasks removes potential rewards.
 
 #### 2. Focus System (Pomodoro) ⏱️
-* **Visual Timer:** SVG-based progress ring.
+* **Visual Timer:** SVG-based progress ring with "Breathing" animations during recharge modes.
 * **Natural Soundscapes:** Integrated audio engine (Rain, Forest, White Noise, Ocean, Cafe).
 * **Modes:** Focus (25m), Short Recharge (5m), Long Recharge (15m).
 * **Background Sync:** Tracks minutes even when navigating tabs.
 
 #### 3. Identity & Gamification 🏆
 * **Economy:** Earn XP/Credits to climb the Global League.
-* **Shop (The Market):** Buy badges (Crown, Star, Flame) and "Streak Restore" items.
+* **Shop (The Market):** Buy badges (Crown, Star, Flame) and "Streak Restore" items with 3D reveal animations.
 * **Achievements:** Auto-unlocking trophy system (e.g., "Deep Work", "Capitalist").
-* **Streaks:** Daily tracking to encourage consistency.
+* **Streaks & Heatmaps:** Track consistency with a 30-day GitHub-style contribution heatmap and daily streaks.
 
 #### 4. Social Network 🌐
 * **Global Leaderboard:** Compete against all agents.
@@ -58,16 +59,20 @@ S1N Productive is a web-based application designed to gamify the "Deep Work" exp
     /
     ├── index.html        # Main Entry Point (UI Structure)
     ├── style.css         # Custom Theme Overrides
-    ├── app.js            # Task Logic
-    ├── auth.js           # Firebase Auth & User Data
-    ├── profile.js        # User Stats & Profile Modal
-    ├── social.js         # Leaderboards & Friend System
-    ├── chat.js           # Messaging Logic
-    ├── shop.js           # Item Store & Purchasing
-    ├── pomodoro.js       # Timer & Audio Engine
-    ├── achievements.js   # Trophy Auto-Unlock Logic
-    ├── notifications.js  # Toast Notification System
-    ├── reports.js        # Analytics & Charts
+    ├── .env              # Environment Variables (e.g., GROQ_API_KEY)
+    ├── js/
+    │   ├── config.js         # API Key Exposer for Frontend
+    │   ├── app.js            # Task Logic & Theme Controls
+    │   ├── tasks.js          # Task Management & AI Breakdown
+    │   ├── auth.js           # Firebase Auth & User Data
+    │   ├── profile.js        # User Stats, Heatmap & Profile Modal
+    │   ├── social.js         # Leaderboards & Friend System
+    │   ├── chat.js           # Messaging Logic
+    │   ├── shop.js           # Item Store & Purchasing
+    │   ├── pomodoro.js       # Timer & Audio Engine
+    │   ├── achievements.js   # Trophy Auto-Unlock Logic
+    │   ├── notifications.js  # Toast Notification System
+    │   └── reports.js        # Analytics & Charts
     └── manifest.json     # (Optional) PWA Manifest
     ```
 
@@ -76,7 +81,10 @@ S1N Productive is a web-based application designed to gamify the "Deep Work" exp
     * Locate the `<script>` tag containing `firebaseConfig`.
     * Ensure your API Key and Database URL are correct.
 
-4.  **Launch**
+4.  **AI Integration Setup**
+    * Create a `.env` file or update `js/config.js` to include your `GROQ_API_KEY` for the AI Breakdown feature.
+
+5.  **Launch**
     * Simply open `index.html` in any modern browser.
     * No build step (`npm run build`) required.
 
