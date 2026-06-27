@@ -147,10 +147,14 @@ window.buyItem = async function(itemId) {
     localStorage.setItem('auraUser', JSON.stringify(user));
     localStorage.setItem('auraProfile', JSON.stringify(profile));
 
-    // --- COLORFUL JUICE ---
+    // --- COLORFUL JUICE & 3D REVEAL ---
     const itemCard = document.getElementById(`shop-item-${item.id}`);
     if(window.triggerJuice && itemCard) {
         window.triggerJuice(itemCard, 0); 
+    }
+    
+    if (itemCard && item.type !== 'consumable') {
+        itemCard.classList.add('badge-3d-reveal');
     }
 
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3'); 
@@ -166,8 +170,11 @@ window.buyItem = async function(itemId) {
         });
     }
 
-    window.loadShop(); 
-    if(window.updateProfileUI) window.updateProfileUI(); 
+    // Delay reload to allow animation to play
+    setTimeout(() => {
+        window.loadShop(); 
+        if(window.updateProfileUI) window.updateProfileUI(); 
+    }, 800);
 
     try {
         if(window.firebase) {

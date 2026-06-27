@@ -353,6 +353,15 @@ function updateLayoutState(mode) {
             btn.className = "px-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-transparent text-muted hover:bg-input transition-all";
         }
     });
+
+    // 3. Breathing Ring Animation
+    if (progressRing) {
+        if (mode === 'short' || mode === 'long') {
+            progressRing.classList.add('animate-breathe');
+        } else {
+            progressRing.classList.remove('animate-breathe');
+        }
+    }
 }
 
 function setMode(mode) {

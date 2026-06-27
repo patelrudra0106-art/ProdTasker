@@ -144,6 +144,8 @@ function updateProfileUI() {
     
     // --- RENDER ACHIEVEMENTS ---
     if(window.renderAchievementsList) window.renderAchievementsList('profile-achievements');
+    
+    renderHeatmap();
 }
 
 // --- BADGE RENDERING (Fixed Grid Layout) ---
@@ -183,6 +185,52 @@ function renderProfileBadges() {
     });
 
     if(window.lucide) lucide.createIcons();
+}
+
+// --- HEATMAP RENDERING ---
+function renderHeatmap() {
+    const heatmapContainer = document.getElementById('heatmap-grid');
+    if (!heatmapContainer) return;
+
+    heatmapContainer.innerHTML = '';
+    
+    // Attempt to load tasks for the user to count completions
+    const user = JSON.parse(localStorage.getItem('auraUser'));
+    const userKey = user ? `auraTasks_${user.name}` : 'auraTasks_guest';
+    const allTasks = JSON.parse(localStorage.getItem(userKey)) || [];
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    // Pre-compute completions by date string
+    const completionsByDate = {};
+    allTasks.forEach(t => {
+        if (t.completed && t.completedAt) {
+            const dateStr = new Date(t.completedAt).toLocaleDateString();
+            completionsByDate[dateStr] = (completionsByDate[dateStr] || 0) + 1;
+        }
+    });
+
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toLocaleDateString();
+        
+        const count = completionsByDate[dateStr] || 0;
+        
+        let colorClass = 'bg-input border-border opacity-50'; // 0 tasks
+        if (count >= 5) {
+            colorClass = 'bg-main border-main text-body shadow-[0_0_8px_var(--text-main)]'; // Full day
+        } else if (count > 0) {
+            colorClass = 'bg-main border-main opacity-40'; // Partial day
+        }
+
+        const block = document.createElement('div');
+        block.className = `w-4 h-4 rounded-sm border ${colorClass} transition-colors`;
+        block.title = `${dateStr}: ${count} tasks`;
+        
+        heatmapContainer.appendChild(block);
+    }
 }
 
 // --- MODAL CONTROLS ---

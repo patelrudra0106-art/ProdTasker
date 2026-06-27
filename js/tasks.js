@@ -244,3 +244,96 @@ if(document.readyState === 'complete') {
 } else {
     document.addEventListener('DOMContentLoaded', window.loadTasks);
 }
+
+// --- AI BREAKDOWN ---
+window.generateAITasks = async function() {
+    const input = document.getElementById('task-input');
+    const btn = document.getElementById('ai-breakdown-btn');
+    const goal = input.value.trim();
+    
+    if (!goal) {
+        if(window.showNotification) window.showNotification("AI ERROR", "Enter a goal first.", "warning");
+        else alert("Enter a goal first.");
+        return;
+    }
+
+    const todayStr = new Date().toLocaleDateString();
+    const tasksToday = window.tasks.filter(t => new Date(t.createdAt).toLocaleDateString() === todayStr).length;
+    const slotsAvailable = 5 - tasksToday;
+
+    if (slotsAvailable <= 0) {
+        if(window.showNotification) window.showNotification("LIMIT REACHED", "Max 5 protocols per day.", "warning");
+        return;
+    }
+
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>';
+    btn.disabled = true;
+    if(window.lucide) lucide.createIcons();
+
+    try {
+        const apiKey = window.ENV && window.ENV.GROQ_API_KEY;
+        if (!apiKey) throw new Error("API Key missing.");
+
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "llama3-8b-8192", 
+                messages: [{
+                    role: "user",
+                    content: `Break down the goal: "${goal}" into exactly ${slotsAvailable} highly actionable, short tasks. Return ONLY a valid JSON array of strings. Do not include markdown formatting or backticks. Example: ["Task 1", "Task 2"]`
+                }],
+                temperature: 0.5
+            })
+        });
+
+        if (!response.ok) throw new Error("API Request failed.");
+        const data = await response.json();
+        let content = data.choices[0].message.content.trim();
+        
+        // Remove markdown if present (e.g. ```json ... ```)
+        if (content.startsWith("```")) {
+            content = content.replace(/^```(json)?\n/, "").replace(/\n```$/, "");
+        }
+        
+        const subtasks = JSON.parse(content.trim());
+        
+        if (!Array.isArray(subtasks)) throw new Error("Invalid format returned.");
+
+        // Add to tasks
+        let added = 0;
+        subtasks.forEach(text => {
+            if(window.tasks.filter(t => new Date(t.createdAt).toLocaleDateString() === todayStr).length >= 5) return;
+            const newTask = {
+                id: Date.now() + Math.random(),
+                text: text.substring(0, 70), // Cap length just in case
+                completed: false,
+                createdAt: Date.now(),
+                date: null,
+                time: null
+            };
+            window.tasks.unshift(newTask);
+            added++;
+        });
+
+        saveTasks();
+        renderTasks();
+        
+        input.value = '';
+        document.getElementById('add-btn').disabled = true;
+        if(window.showNotification) window.showNotification("AI BREAKDOWN", `${added} sub-tasks generated.`, "success");
+
+    } catch (error) {
+        console.error("AI Breakdown Error:", error);
+        if(window.showNotification) window.showNotification("AI ERROR", "Failed to generate tasks.", "warning");
+        else alert("Failed to generate tasks.");
+    } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        if(window.lucide) lucide.createIcons();
+    }
+};
