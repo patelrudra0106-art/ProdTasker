@@ -260,6 +260,16 @@ function resetTimer() {
 function completeStopwatchSession() {
     const minutes = Math.floor(timeLeft / 60);
     
+    if (minutes < 1) {
+        if (window.showNotification) {
+            window.showNotification("SESSION DISCARDED", "Flow state must be at least 1 minute to log.", "warning");
+        }
+        timeLeft = 0;
+        timerStatus.textContent = 'READY';
+        updateDisplay();
+        return;
+    }
+    
     // --- FIX: 1 Minute = 1 Point ---
     const earnedPoints = minutes * 1; 
 

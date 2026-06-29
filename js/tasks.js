@@ -282,7 +282,7 @@ window.generateAITasks = async function() {
                 "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: "llama3-8b-8192", 
+                model: "llama-3.1-8b-instant", 
                 messages: [{
                     role: "user",
                     content: `Break down the goal: "${goal}" into exactly ${slotsAvailable} highly actionable, short tasks. Return ONLY a valid JSON array of strings. Do not include markdown formatting or backticks. Example: ["Task 1", "Task 2"]`
@@ -291,16 +291,22 @@ window.generateAITasks = async function() {
             })
         });
 
-        if (!response.ok) throw new Error("API Request failed.");
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(`API Error: ${errData.error?.message || response.statusText}`);
+        }
+        
         const data = await response.json();
         let content = data.choices[0].message.content.trim();
         
-        // Remove markdown if present (e.g. ```json ... ```)
-        if (content.startsWith("```")) {
-            content = content.replace(/^```(json)?\n/, "").replace(/\n```$/, "");
+        // Robust JSON extraction using regex
+        let jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+            throw new Error("AI did not return a valid list format.");
         }
         
-        const subtasks = JSON.parse(content.trim());
+        content = jsonMatch[0];
+        const subtasks = JSON.parse(content);
         
         if (!Array.isArray(subtasks)) throw new Error("Invalid format returned.");
 
@@ -320,8 +326,8 @@ window.generateAITasks = async function() {
             added++;
         });
 
-        saveTasks();
-        renderTasks();
+        if (typeof saveTasks === 'function') saveTasks();
+        if (typeof renderTasks === 'function') renderTasks();
         
         input.value = '';
         document.getElementById('add-btn').disabled = true;
@@ -329,8 +335,8 @@ window.generateAITasks = async function() {
 
     } catch (error) {
         console.error("AI Breakdown Error:", error);
-        if(window.showNotification) window.showNotification("AI ERROR", "Failed to generate tasks.", "warning");
-        else alert("Failed to generate tasks.");
+        if(window.showNotification) window.showNotification("AI ERROR", error.message || "Failed to generate tasks.", "warning");
+        else alert("AI Error: " + error.message);
     } finally {
         btn.innerHTML = originalHTML;
         btn.disabled = false;

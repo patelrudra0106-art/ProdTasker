@@ -63,7 +63,7 @@ function listenForBroadcasts() {
 function checkAdminAccess() {
     const adminNav = document.getElementById('nav-admin');
     
-    if (currentUser && currentUser.name === 'Owner') {
+    if (currentUser && currentUser.name === 'Rudra') {
         if (adminNav) adminNav.classList.remove('hidden');
         
         const search = document.getElementById('admin-search');
@@ -78,7 +78,7 @@ function checkAdminAccess() {
 }
 
 window.loadAdminPanel = function(filter = '') {
-    if (!currentUser || currentUser.name !== 'Owner') return;
+    if (!currentUser || currentUser.name !== 'Rudra') return;
     
     const list = document.getElementById('admin-user-list');
     if (!list) return;
@@ -177,7 +177,7 @@ window.loadAdminPanel = function(filter = '') {
         users.forEach(user => {
             if (!user) return;
 
-            const isAdmin = user.name === 'Owner';
+            const isAdmin = user.name === 'Rudra';
             const isBanned = user.isBanned === true; 
             const safeName = user.name.replace(/'/g, "\\'"); 
             
@@ -371,7 +371,7 @@ window.adminToggleBan = function(targetName, currentStatus) {
 };
 
 window.adminEditPoints = async function(targetName, currentDisplayPoints) {
-    if (!currentUser || currentUser.name !== 'Owner') return;
+    if (!currentUser || currentUser.name !== 'Rudra') return;
 
     const newPointsStr = prompt(`Set TOTAL Credits for ${targetName}:`, currentDisplayPoints);
     if (newPointsStr === null || newPointsStr.trim() === "") return;
@@ -401,8 +401,8 @@ window.adminEditPoints = async function(targetName, currentDisplayPoints) {
 };
 
 window.adminDeleteUser = function(targetName) {
-    if (!currentUser || currentUser.name !== 'Owner') return;
-    if (targetName === 'Owner') return alert("Protected User.");
+    if (!currentUser || currentUser.name !== 'Rudra') return;
+    if (targetName === 'Rudra') return alert("Protected User.");
     
     if (confirm(`⚠️ PERMANENTLY PURGE "${targetName}"?`)) {
         firebase.database().ref('users/' + targetName).remove()
@@ -513,6 +513,8 @@ function loginUser(user) {
     
     authOverlay.classList.add('hidden');
     mainApp.classList.remove('hidden');
+    
+    checkAdminAccess(); // Ensure admin button shows immediately on signup
     
     if(window.initChatNotifications) window.initChatNotifications();
 }

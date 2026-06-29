@@ -208,7 +208,10 @@ function renderLeaderboard(filter = '') {
         });
 
         // Filter
-        users = users.filter(u => u.name !== 'Owner');
+        // --- FILTERING OUT ADMIN (RUDRA) AND CURRENT USER ---
+        // Exclude Admin from Leaderboard and Exclude Current User
+        users = users.filter(u => u.name !== 'Rudra');
+        users = users.filter(u => u.name !== myUser.name);
 
         if (socialViewMode === 'friends' && myUser) {
             const myFriends = myUser.friends || [];
