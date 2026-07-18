@@ -1,10 +1,10 @@
-# S1N PRODUCTIVE.
+# PRODTASKER.
 
 > **Focus. Execute. Repeat.** > An industrial-grade productivity suite blending strict task management with a gamified social economy.
 
 ## 📂 Project Overview
 
-S1N Productive is a web-based application designed to gamify the "Deep Work" experience. Unlike standard to-do lists, S1N enforces a **5-Task Daily Limit** to prevent burnout and ensure prioritization. It features a complete economy where users earn "Credits" to purchase cosmetic badges and utility items.
+ProdTasker is a web-based application designed to gamify the "Deep Work" experience. Unlike standard to-do lists, ProdTasker enforces a **5-Task Daily Limit** to prevent burnout and ensure prioritization. It features a complete economy where users earn "Credits" to purchase cosmetic badges and utility items.
 
 ### 🌟 Core Features
 
@@ -90,7 +90,7 @@ S1N Productive is a web-based application designed to gamify the "Deep Work" exp
 
 ## 🎨 Theme Customization
 
-S1N Productive uses a strict **Industrial Monochrome** theme.
+ProdTasker uses a strict **Industrial Monochrome** theme.
 * **Light Mode:** Clean gray backgrounds, sharp black text.
 * **Dark Mode:** OLED black backgrounds, white text, matte accents.
 * **Accent Color:** Configurable in `style.css` (Default: Black/White).

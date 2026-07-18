@@ -1,4 +1,4 @@
-/* service-worker.js - S1N Offline Capability (Animation Update) */
+/* service-worker.js - ProdTasker Offline Capability (Animation Update) */
 
 const CACHE_NAME = 's1n-productive-v5'; // Version bumped for Animation System
 
