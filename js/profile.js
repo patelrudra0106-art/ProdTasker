@@ -1,4 +1,4 @@
-/* profile.js - S1N Industrial Theme Update (Standard) */
+/* profile.js - ProdTasker Industrial Theme Update (Standard) */
 
 // --- STATE ---
 // We initialize this for UI rendering, but logic functions will now reload fresh data
@@ -284,7 +284,7 @@ window.exportUserData = function() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `S1N_BACKUP_${user.name}_${new Date().toISOString().slice(0,10)}.json`);
+    downloadAnchorNode.setAttribute("download", `ProdTasker_BACKUP_${user.name}_${new Date().toISOString().slice(0,10)}.json`);
     document.body.appendChild(downloadAnchorNode); 
     downloadAnchorNode.click();
     downloadAnchorNode.remove();

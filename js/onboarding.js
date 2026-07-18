@@ -1,4 +1,4 @@
-/* onboarding.js - S1N Adaptive Intro System (Assets Folder Update) */
+/* onboarding.js - ProdTasker Adaptive Intro System (Assets Folder Update) */
 
 const ONBOARDING_SLIDES = [
     {

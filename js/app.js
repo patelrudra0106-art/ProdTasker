@@ -1,4 +1,4 @@
-/* app.js - S1N Global Logic & Theme System (Command Center Update) */
+/* app.js - ProdTasker Global Logic & Theme System (Command Center Update) */
 
 // --- GLOBAL SETTINGS STATE ---
 window.appSettings = {

@@ -1,4 +1,4 @@
-/* pomodoro.js - S1N Industrial Theme (Layout Update) */
+/* pomodoro.js - ProdTasker Industrial Theme (Layout Update) */
 
 // --- POMODORO CONFIG ---
 let settings = JSON.parse(localStorage.getItem('auraTimerSettings')) || {
@@ -185,7 +185,7 @@ function updateDisplay() {
     }
     
     // Update Tab Title
-    document.title = isRunning ? `[${displayStr}] ${MODES[currentMode].label}` : 'S1N.';
+    document.title = isRunning ? `[${displayStr}] ${MODES[currentMode].label}` : 'ProdTasker';
     
     // BUTTON LOGIC
     if(currentMode === 'stopwatch' && timeLeft > 0) {

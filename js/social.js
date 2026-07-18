@@ -1,4 +1,4 @@
-/* social.js - S1N Social System (Global/League + Friends Sub-Tabs) */
+/* social.js - ProdTasker Social System (Global/League + Friends Sub-Tabs) */
 
 const socialList = document.getElementById('contest-list'); 
 const searchInput = document.getElementById('user-search');

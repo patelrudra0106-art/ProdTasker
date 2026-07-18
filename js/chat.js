@@ -1,4 +1,4 @@
-/* chat.js - S1N Real-time Messaging (Inbox Refresh Update) */
+/* chat.js - ProdTasker Real-time Messaging (Inbox Refresh Update) */
 
 let currentChatFriend = null;
 let chatListener = null;

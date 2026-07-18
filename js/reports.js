@@ -1,4 +1,4 @@
-/* reports.js - S1N Industrial Theme Update */
+/* reports.js - ProdTasker Industrial Theme Update */
 
 // --- INIT ---
 window.initReports = function() {

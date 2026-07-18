@@ -1,4 +1,4 @@
-/* S1N Industrial Theme (Colorful Update) */
+/* ProdTasker Industrial Theme (Colorful Update) */
 
 // --- CONFIGURATION ---
 window.ACHIEVEMENT_DATA = [

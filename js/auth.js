@@ -1,4 +1,4 @@
-/* auth.js - S1N Industrial Theme Update (Onboarding Linked) */
+/* auth.js - ProdTasker Industrial Theme Update (Onboarding Linked) */
 
 // --- STATE ---
 let currentUser = JSON.parse(localStorage.getItem('auraUser')) || null;

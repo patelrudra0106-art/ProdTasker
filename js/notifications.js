@@ -1,4 +1,4 @@
-/* notifications.js - S1N Industrial Theme Update (Settings Aware) */
+/* notifications.js - ProdTasker Industrial Theme Update (Settings Aware) */
 
 // --- STATE ---
 let notificationHistory = JSON.parse(localStorage.getItem('auraNotificationHistory')) || [];

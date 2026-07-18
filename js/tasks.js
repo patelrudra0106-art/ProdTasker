@@ -1,4 +1,4 @@
-/* tasks.js - S1N Task Management & Logic (Notifications Enabled) */
+/* tasks.js - ProdTasker Task Management & Logic (Notifications Enabled) */
 
 let currentFilter = 'all';
 
