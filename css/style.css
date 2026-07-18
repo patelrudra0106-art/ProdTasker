@@ -1,8 +1,8 @@
-/* S1N Industrial Theme - GAMIFIED UPDATE */
+/* ProdTasker Industrial Theme - GAMIFIED UPDATE */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* --- S1N THEME VARIABLES --- */
+/* --- ProdTasker THEME VARIABLES --- */
 :root {
     --font-sans: 'Inter', sans-serif;
 
@@ -57,7 +57,7 @@ body {
 .dark ::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
 :focus-visible { outline: none; }
 
-/* --- S1N COMPONENT CLASSES --- */
+/* --- ProdTasker COMPONENT CLASSES --- */
 
 /* 1. Pill Button */
 .btn-s1n {
