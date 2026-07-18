@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ProdTasker</title>
+    <link rel="manifest" href="manifest.json">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        body: 'var(--bg-body)',
+                        card: 'var(--bg-card)',
+                        input: 'var(--bg-input)',
+                        main: 'var(--text-main)',
+                        muted: 'var(--text-muted)',
+                        border: 'var(--border-light)',
+                        borderDark: 'var(--border-dark)',
+                    },
+                    animation: { 
+                        'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'slide-in': 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pop': 'pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                        'slide-in-top': 'slideInTop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'rgb-border': 'rgbBorder 3s linear infinite',
+                        'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <script>
+        // Init Theme immediately
+        if (localStorage.getItem('auraTheme') === 'dark' || 
+           (!('auraTheme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-body text-main min-h-screen selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black transition-colors duration-300">
+
+    <div id="auth-overlay" class="fixed inset-0 z-[200] flex flex-col items-center justify-center p-6 bg-body transition-all duration-500">
+        <div class="w-full max-w-sm animate-fade-in">
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-extrabold tracking-tighter leading-tight mb-2">
+                    <span class="animate-title stagger-1 inline-block">ProdTasker</span>              
+                </h1>
+            </div>
+            
+            <div class="auth-card p-8">
+                <h2 id="auth-title" class="text-xl font-bold mb-6 tracking-tight">
+                    <span class="animate-title inline-block">Enter Workspace</span>
+                </h2>
+                <form onsubmit="handleAuth(event)" class="space-y-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-muted uppercase tracking-widest">Username</label>
+                        <input type="text" id="auth-name" required class="input-s1n" placeholder="name_01">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-bold text-muted uppercase tracking-widest">Password</label>
+                        <input type="password" id="auth-pass" required class="input-s1n" placeholder="••••••••">
+                    </div>
+                    <div id="field-confirm-pass" class="hidden space-y-1.5 animate-fade-in">
+                        <label class="text-[10px] font-bold text-muted uppercase tracking-widest">Confirm</label>
+                        <input type="password" id="auth-confirm-pass" class="input-s1n" placeholder="••••••••">
+                    </div>
+                    <button type="submit" id="auth-submit" class="btn-s1n w-full mt-4">Log in </button>
+                </form>
+                <div class="mt-8 pt-6 border-t border-border">
+                    <p id="toggle-auth-mode" class="text-sm text-center text-muted">
+                        New agent? <span class="text-main font-bold cursor-pointer hover:underline" onclick="toggleAuthMode()">Create ID</span>
+                    </p>
+                </div>
+            </div>
+            <div class="mt-12 text-center space-y-2">
+                 <p class="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">Focus. Execute. Repeat.</p>
+                 <p class="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">ProdTasker design System</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-overlay" class="hidden fixed inset-0 z-[300] bg-body animate-slide-in-top flex flex-col">
+        <div class="px-6 py-4 border-b border-border bg-body/95 backdrop-blur sticky top-0 z-10 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg border border-border flex items-center justify-center bg-card">
+                    <i data-lucide="sliders" class="w-4 h-4 text-main"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold uppercase tracking-wider leading-none">System Config</h2>
+                    <p class="text-[10px] text-muted font-bold uppercase tracking-widest mt-1">Control Panel</p>
+                </div>
+            </div>
+            <button onclick="closeFullSettings()" class="w-8 h-8 rounded-full hover:bg-input flex items-center justify-center transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 space-y-8 pb-24 scrollbar-hide max-w-lg mx-auto w-full">
+            
+            <section>
+                <h3 class="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-3 ml-1">Account Detail</h3>
+                <div class="card-s1n p-1 overflow-hidden">
+                    <div class="p-4 flex items-center justify-between border-b border-border">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-input border border-border flex items-center justify-center">
+                                <i data-lucide="user" class="w-5 h-5 text-muted"></i>
+                            </div>
+                            <div>
+                                <p id="settings-username" class="text-sm font-bold text-main">User</p>
+                                <p class="text-[10px] text-muted uppercase tracking-wider">Status: Active</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-b border-border">
+                        <button onclick="toggleChangePass()" class="w-full flex items-center justify-between p-4 hover:bg-input transition-colors text-left">
+                            <span class="text-xs font-bold uppercase tracking-wider text-main">Change Password</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-muted"></i>
+                        </button>
+                        <div id="change-pass-form" class="hidden bg-input p-4 border-t border-border space-y-3 animate-fade-in">
+                            <input type="password" id="cp-old" placeholder="Current Key" class="input-s1n py-2 text-xs bg-card">
+                            <input type="password" id="cp-new" placeholder="New Key" class="input-s1n py-2 text-xs bg-card">
+                            <button onclick="submitChangePass()" id="cp-btn" class="btn-s1n w-full py-2 text-xs">Update Password</button>
+                        </div>
+                    </div>
+
+                    <button onclick="exportUserData()" class="w-full flex items-center justify-between p-4 hover:bg-input transition-colors border-b border-border text-left">
+                        <span class="text-xs font-bold uppercase tracking-wider text-main">Backup Database</span>
+                        <i data-lucide="download" class="w-4 h-4 text-muted"></i>
+                    </button>
+
+                    <button onclick="logout()" class="w-full flex items-center justify-between p-4 hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-colors border-b border-border text-left group">
+                        <span class="text-xs font-bold uppercase tracking-wider text-rose-500">Logout</span>
+                        <i data-lucide="log-out" class="w-4 h-4 text-rose-300 group-hover:text-rose-500"></i>
+                    </button>
+                    <button onclick="deleteAccount()" class="w-full flex items-center justify-between p-4 hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-colors text-left group">
+                        <span class="text-xs font-bold uppercase tracking-wider text-rose-500">Delete Account</span>
+                        <i data-lucide="trash-2" class="w-4 h-4 text-rose-300 group-hover:text-rose-500"></i>
+                    </button>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-3 ml-1">General System</h3>
+                <div class="card-s1n p-4 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold uppercase tracking-wider">Language</label>
+                        <select id="setting-lang" class="bg-input border border-border text-xs font-bold uppercase rounded-lg py-1.5 px-3 focus:outline-none" onchange="updateGeneralSettings()">
+                            <option value="en">English</option>
+                            <option value="es" disabled>Spanish (WIP)</option>
+                            <option value="jp" disabled>Japanese (WIP)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold uppercase tracking-wider">Time Format</label>
+                        <div class="flex bg-input rounded-lg p-1 border border-border">
+                            <button onclick="setTimeFormat('12h')" id="btn-12h" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">12H</button>
+                            <button onclick="setTimeFormat('24h')" id="btn-24h" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">24H</button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold uppercase tracking-wider">Visual Theme</label>
+                        <div class="flex bg-input rounded-lg p-1 border border-border">
+                            <button onclick="setTheme('light')" id="theme-btn-light" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">Light</button>
+                            <button onclick="setTheme('dark')" id="theme-btn-dark" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all">Dark</button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold uppercase tracking-wider">Notification system</label>
+                        <button id="btn-notif-toggle" onclick="toggleNotifications()" class="w-10 h-5 rounded-full bg-border relative transition-colors">
+                            <div id="knob-notif" class="w-3 h-3 bg-white rounded-full absolute top-1 left-1 transition-transform"></div>
+                        </button>
+                    </div>
+                    
+                    <button onclick="openNotificationHistory()" class="w-full flex justify-between items-center py-3 px-4 border border-border rounded-xl text-xs font-bold uppercase hover:bg-input transition-colors">
+                        <span>View Notification</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-muted"></i>
+                    </button>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-3 ml-1">Focus Calibration</h3>
+                <div class="card-s1n p-4 space-y-4">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="flex items-center justify-between border-b border-border pb-3">
+                            <label class="text-xs font-bold uppercase tracking-wider text-muted">Focus Session</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="setting-focus" class="input-s1n w-16 text-center py-1 text-sm font-mono" onchange="saveTimerSettings()">
+                                <span class="text-[10px] font-bold uppercase text-muted">Min</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-b border-border pb-3">
+                            <label class="text-xs font-bold uppercase tracking-wider text-muted">Short Break</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="setting-short" class="input-s1n w-16 text-center py-1 text-sm font-mono" onchange="saveTimerSettings()">
+                                <span class="text-[10px] font-bold uppercase text-muted">Min</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold uppercase tracking-wider text-muted">Long Break</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="setting-long" class="input-s1n w-16 text-center py-1 text-sm font-mono" onchange="saveTimerSettings()">
+                                <span class="text-[10px] font-bold uppercase text-muted">Min</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-3 ml-1">System Info</h3>
+                <div class="card-s1n overflow-hidden">
+                    <button onclick="alert('Standard ProdTasker Terms apply.')" class="w-full flex items-center justify-between p-4 hover:bg-input transition-colors border-b border-border text-left">
+                        <span class="text-xs font-bold uppercase tracking-wider text-muted">Terms of Service</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-muted"></i>
+                    </button>
+                    <button onclick="alert('Data stored locally and on Firebase. No third-party tracking.')" class="w-full flex items-center justify-between p-4 hover:bg-input transition-colors border-b border-border text-left">
+                        <span class="text-xs font-bold uppercase tracking-wider text-muted">Privacy Policy</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-muted"></i>
+                    </button>
+                    <div class="p-4 bg-input flex justify-between items-center">
+                        <span class="text-xs font-bold uppercase tracking-wider text-muted">Version</span>
+                        <span class="text-[10px] font-mono font-bold text-main opacity-50">v2.5.0 (IND)</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="text-center pt-8">
+                 <p class="text-[9px] font-bold text-muted uppercase tracking-[0.3em] opacity-30">ProdTasker Design System</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden flex flex-col min-h-screen pb-24 max-w-lg mx-auto w-full relative"> 
+        
+        <header class="px-6 pt-6 pb-4 sticky top-0 z-40 bg-body/95 backdrop-blur-sm transition-all">
+            <div class="flex justify-between items-start mb-1">
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tighter leading-tight">
+                        <span class="animate-title stagger-1 inline-block">ProdTasker</span>
+                        
+                    </h1>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="window.openAccount()" class="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-card transition-colors">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="openFullSettings()" class="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-card transition-colors">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 mt-2">
+                <div class="flex items-center gap-2 px-3 py-1 border border-border rounded-full bg-card">
+                    <i data-lucide="flame" class="w-3 h-3 text-main"></i>
+                    <span id="streak-count" class="text-xs font-bold font-mono">0</span>
+                </div>
+                <div class="h-px flex-1 bg-border"></div> 
+            </div>
+        </header>
+
+        <div class="px-6 flex-1 w-full relative">
+            
+            <section id="view-tasks" class="view-section animate-fade-in">
+                <form id="task-form" class="mb-8">
+                    <div class="relative group mb-3 flex gap-2">
+                        <input type="text" id="task-input" placeholder="New Task... (Or type a Goal for AI Breakdown)" autocomplete="off" class="input-s1n text-lg font-medium py-4 flex-1">
+                        <button type="button" onclick="generateAITasks()" id="ai-breakdown-btn" class="px-4 py-4 text-xs font-bold uppercase rounded-xl border border-border text-muted hover:text-main hover:border-main hover:bg-input transition-colors magnetic-btn flex items-center justify-center" title="Break down with AI">
+                            <i data-lucide="sparkles" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="date" id="date-input" class="input-s1n w-auto text-xs">
+                        <input type="time" id="time-input" class="input-s1n w-auto text-xs">
+                        <button type="submit" id="add-btn" disabled class="btn-s1n ml-auto px-6 py-2 magnetic-btn">Add</button>
+                    </div>
+                </form>
+                <div class="flex gap-2 mb-6 border-b border-border pb-4 overflow-x-auto scrollbar-hide">
+                    <button data-filter="all" class="filter-btn active text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-main bg-main text-body transition-colors">All</button>
+                    <button data-filter="active" class="filter-btn text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-transparent text-muted hover:text-main transition-colors">Active</button>
+                    <button data-filter="completed" class="filter-btn text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-transparent text-muted hover:text-main transition-colors">Done</button>
+                </div>
+                <ul id="task-list" class="space-y-3"></ul>
+                <div id="empty-state" class="hidden py-12 border border-dashed border-border rounded-2xl text-center">
+                    <p class="text-muted font-medium">System Idle. Add Task.</p>
+                </div>
+            </section>
+
+            <section id="view-focus" class="view-section hidden animate-fade-in flex flex-col items-center pt-2">
+                
+                <div class="flex p-1 bg-input rounded-xl border border-border mb-4 w-full max-w-[280px]">
+                    <button id="switch-pomodoro" class="flex-1 py-2 text-xs font-bold uppercase rounded-lg bg-card shadow-sm text-main transition-all">Pomodoro</button>
+                    <button id="switch-stopwatch" class="flex-1 py-2 text-xs font-bold uppercase rounded-lg text-muted hover:text-main transition-all">Stopwatch</button>
+                </div>
+
+                <div id="active-task-display" class="hidden w-full mb-6">
+                    <div class="flex items-center justify-between p-4 border border-border rounded-full bg-card">
+                        <span class="text-xs font-bold uppercase tracking-wider text-muted ml-2">Focusing:</span>
+                        <span id="focus-task-text" class="font-bold text-sm truncate px-2">Task Name</span>
+                        <button onclick="clearFocusTask()" class="p-1 hover:text-rose-500"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+
+                <div class="mb-4 w-full max-w-[280px]">
+                    <div class="relative">
+                        <i data-lucide="music" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted z-10"></i>
+                        <select id="sound-selector" class="input-s1n pl-9 py-2.5 text-xs font-bold uppercase tracking-wider cursor-pointer bg-card hover:border-main appearance-none">
+                            <option value="none">Silent Mode</option>
+                            <option value="rain">Heavy Rain</option>
+                            <option value="forest">Night Forest</option>
+                            <option value="white">White Noise</option>
+                            <option value="waves">Ocean Waves</option>
+                            <option value="cafe">Coffee Shop</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div id="timer-submodes" class="w-full max-w-[280px] grid grid-cols-3 gap-2 mb-8 transition-all duration-300">
+                    <button id="mode-work" class="px-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-main bg-main text-body">Focus</button>
+                    <button id="mode-short" class="px-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-transparent text-muted hover:bg-input">Short</button>
+                    <button id="mode-long" class="px-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-transparent text-muted hover:bg-input">Long</button>
+                </div>
+
+                <div class="card-s1n p-8 w-full flex flex-col items-center relative overflow-hidden mb-6">
+                    <div class="relative w-64 h-64 mb-8">
+                        <svg class="w-full h-full transform -rotate-90">
+                            <circle cx="128" cy="128" r="118" stroke="var(--border-light)" stroke-width="2" fill="none" />
+                            <circle id="progress-ring" cx="128" cy="128" r="118" stroke="var(--text-main)" stroke-width="4" fill="none" stroke-dasharray="741" stroke-dashoffset="0" stroke-linecap="round" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="timer-display" class="text-7xl font-extrabold tracking-tighter tabular-nums transition-all">25:00</span>
+                            <span id="timer-status" class="text-xs font-bold uppercase tracking-[0.2em] mt-2 text-muted">Ready</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 w-full justify-center">
+                        <button id="timer-reset" class="w-14 h-14 rounded-full border border-border flex items-center justify-center hover:bg-border transition-colors magnetic-btn">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        </button>
+                        <button id="timer-toggle" class="h-14 px-8 rounded-full bg-main text-body font-bold text-lg flex items-center gap-2 hover:opacity-90 transition-opacity magnetic-btn">
+                            <i data-lucide="play" class="w-5 h-5 fill-current"></i> Start
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-reports" class="view-section hidden animate-fade-in">
+                <h2 class="text-3xl font-bold tracking-tight mb-6">
+                    <span class="animate-title stagger-1 inline-block">Analytics.</span>
+                </h2>
+                <div class="flex border-b border-border mb-6">
+                    <button onclick="switchReportTab('daily')" data-type="daily" class="report-tab flex-1 pb-3 text-xs font-bold uppercase tracking-wider border-b-2 border-main text-main">Daily</button>
+                    <button onclick="switchReportTab('weekly')" data-type="weekly" class="report-tab flex-1 pb-3 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-muted hover:text-main">Weekly</button>
+                    <button onclick="switchReportTab('monthly')" data-type="monthly" class="report-tab flex-1 pb-3 text-xs font-bold uppercase tracking-wider border-b-2 border-transparent text-muted hover:text-main">Monthly</button>
+                </div>
+                <div id="report-content" class="w-full space-y-4"></div>
+            </section>
+
+            <section id="view-contest" class="view-section hidden animate-fade-in">
+                <h2 class="text-3xl font-bold tracking-tight mb-2">
+                    <span class="animate-title stagger-1 inline-block">Network.</span>
+                </h2>
+                <p class="text-muted text-sm mb-6">Global Leaderboard & Friends</p>
+                
+                <div id="requests-container" class="hidden mb-6">
+                        <h3 class="text-xs font-bold uppercase text-main mb-3 pl-1 flex items-center gap-2">
+                        <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Pending Requests
+                    </h3>
+                    <div id="requests-list" class="space-y-2"></div>
+                </div>
+
+                <div class="flex gap-2 mb-6 overflow-x-auto scrollbar-hide">
+                    <button id="tab-global" onclick="setSocialTab('global')" class="px-4 py-2 rounded-full border border-main bg-main text-body text-xs font-bold uppercase whitespace-nowrap">Global</button>
+                    <button id="tab-league" onclick="setSocialTab('league')" class="px-4 py-2 rounded-full border border-border text-muted hover:text-main text-xs font-bold uppercase whitespace-nowrap">League</button>
+                    <button id="tab-friends" onclick="setSocialTab('friends')" class="px-4 py-2 rounded-full border border-border text-muted hover:text-main text-xs font-bold uppercase whitespace-nowrap">Friends</button>
+                </div>
+                
+                <div id="search-container" class="relative mb-6">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted"></i>
+                    <input type="text" id="user-search" placeholder="Search Agent..." class="input-s1n pl-10">
+                </div>
+                
+                <div id="contest-list" class="space-y-2 pb-24"></div>
+            </section>
+
+            <section id="view-shop" class="view-section hidden animate-fade-in">
+                <div class="flex justify-between items-end mb-6">
+                    <h2 class="text-3xl font-bold tracking-tight">
+                        <span class="animate-title stagger-1 inline-block">Market.</span>
+                    </h2>
+                    <div class="text-right">
+                        <span id="shop-points-display" class="block text-2xl font-bold font-mono">0</span>
+                        <span class="text-[10px] font-bold uppercase text-muted tracking-wider">Credits</span>
+                    </div>
+                </div>
+                <div id="shop-list" class="grid grid-cols-2 gap-4 pb-24"></div>
+            </section>
+
+            <section id="view-admin" class="view-section hidden animate-fade-in">
+                <h2 class="text-3xl font-bold tracking-tight mb-6 text-rose-500">
+                    <span class="animate-title stagger-1 inline-block">Admin Control.</span>
+                </h2>
+                <input type="text" id="admin-search" placeholder="Search Database..." class="input-s1n mb-6">
+                <div id="admin-user-list" class="space-y-3 pb-24"></div>
+            </section>
+        </div>
+
+        <nav class="fixed bottom-6 left-6 right-6 max-w-[calc(100%-3rem)] md:max-w-md md:mx-auto bg-main text-body rounded-full px-6 py-4 shadow-2xl flex justify-between items-center z-50">
+            <button onclick="switchView('tasks')" id="nav-tasks" class="nav-item opacity-100 transition-opacity">
+                <i data-lucide="list" class="w-5 h-5"></i>
+            </button>
+            <button onclick="switchView('focus')" id="nav-focus" class="nav-item opacity-50 hover:opacity-100 transition-opacity">
+                <i data-lucide="clock" class="w-5 h-5"></i>
+            </button>
+            <button onclick="switchView('reports')" id="nav-reports" class="nav-item opacity-50 hover:opacity-100 transition-opacity">
+                <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+            </button>
+            <button onclick="switchView('contest')" id="nav-contest" class="nav-item opacity-50 hover:opacity-100 transition-opacity">
+                <i data-lucide="globe" class="w-5 h-5"></i>
+            </button>
+            <button onclick="switchView('shop')" id="nav-shop" class="nav-item opacity-50 hover:opacity-100 transition-opacity">
+                <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+            </button>
+            <button onclick="switchView('admin')" id="nav-admin" class="nav-item hidden text-rose-300 opacity-100">
+                <i data-lucide="shield" class="w-5 h-5"></i>
+            </button>
+        </nav>
+
+    </div>
+
+    <div id="account-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+        <div class="card-s1n w-full max-w-sm p-6 relative animate-pop h-[70vh] overflow-y-auto scrollbar-hide">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold tracking-tight">User Profile</h3>
+                <button onclick="closeAccount()"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="p-3 bg-input rounded-xl mb-4 text-center">
+                 <p class="text-[10px] uppercase font-bold text-muted mb-1">User Identity</p>
+                 <p id="profile-name" class="font-bold text-lg">Guest</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="p-3 border border-border rounded-xl text-center">
+                    <div id="display-points" class="text-xl font-bold font-mono">0</div>
+                    <div class="text-[10px] uppercase font-bold text-muted">Credits</div>
+                </div>
+                <div class="p-3 border border-border rounded-xl text-center">
+                    <div id="display-streak" class="text-xl font-bold font-mono">0</div>
+                    <div class="text-[10px] uppercase font-bold text-muted">Streak</div>
+                </div>
+            </div>
+
+            <div id="profile-badges"></div>
+            
+            <div id="profile-heatmap" class="mb-4 mt-4 pt-4 border-t border-border w-full">
+                <h4 class="text-[10px] font-bold uppercase text-muted tracking-widest mb-3 text-left w-full pl-1">Consistency (Last 30 Days)</h4>
+                <div id="heatmap-grid" class="flex flex-wrap gap-1.5 justify-center"></div>
+            </div>
+
+            <div id="profile-achievements" class="mb-4"></div>
+        </div>
+    </div>
+    
+    <div id="friend-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+        <div id="friend-modal-content" class="card-s1n w-full max-w-sm p-6 relative animate-pop"></div>
+    </div>
+
+    <div id="chat-modal" class="hidden fixed inset-0 z-[200] bg-body flex flex-col animate-slide-in-top">
+        <div class="p-4 border-b border-border flex justify-between items-center bg-card/95 backdrop-blur-md sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <button onclick="closeChat()" class="text-muted hover:text-main">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-input border border-border flex items-center justify-center">
+                        <i data-lucide="user" class="w-4 h-4 text-main"></i>
+                    </div>
+                    <div>
+                        <h3 id="chat-title" class="font-bold text-main leading-none">User</h3>
+                        <p class="text-[10px] text-muted uppercase tracking-wider mt-0.5">Online</p>
+                    </div>
+                </div>
+            </div>
+            <button class="text-muted hover:text-rose-500 transition-colors">
+                <i data-lucide="more-vertical" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-body scrollbar-hide pb-24">
+            </div>
+
+        <div class="p-3 border-t border-border bg-card/95 backdrop-blur-md pb-6 sticky bottom-0 z-10">
+            <div class="flex gap-2 items-end bg-input rounded-2xl p-2 border border-border">
+                <input type="text" id="chat-input" placeholder="Transmit message..." class="bg-transparent flex-1 p-2 text-sm outline-none text-main" autocomplete="off">
+                <button onclick="sendChatMessage()" class="p-2 bg-main text-body rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-history-modal" class="hidden fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
+        <div class="card-s1n w-full max-w-sm h-[60vh] flex flex-col p-6 animate-pop">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold">System Logs</h3>
+                <button onclick="closeNotificationHistory()"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="notification-history-list" class="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-hide"></div>
+            <button onclick="clearAllNotifications()" class="mt-4 text-xs font-bold text-rose-500 uppercase tracking-wider text-center">Clear Notification</button>
+        </div>
+    </div>
+
+    <div id="onboarding-modal" class="hidden fixed inset-0 z-[250] flex items-center justify-center bg-body transition-all duration-500">
+        <div class="w-full max-w-md h-full md:h-auto md:max-h-[85vh] flex flex-col justify-between p-6 md:p-8 md:border md:border-border md:rounded-3xl md:bg-card md:shadow-2xl relative">
+            
+            <div class="w-full flex justify-end">
+                <button onclick="finishOnboarding()" class="text-[10px] font-bold uppercase text-muted hover:text-main tracking-widest py-2">Skip Intro</button>
+            </div>
+
+            <div id="onboarding-content" class="flex-1 flex items-center justify-center w-full">
+                </div>
+
+            <div class="w-full flex flex-col items-center gap-6 mt-4">
+                <div id="onboarding-dots" class="flex gap-2"></div>
+                <button id="onboarding-btn" onclick="nextSlide()" class="btn-s1n w-full py-4 text-xs uppercase tracking-[0.2em] flex items-center justify-center transition-all">
+                    Next Step
+                </button>
+            </div>
+        </div>
+    </div>
+    <audio id="silence" loop><source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTSV*****" type="audio/mpeg"></audio>
+    <audio id="alarm-sound" preload="auto"><source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg"></audio>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/social.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/achievements.js"></script> 
+    <script src="js/profile.js"></script>
+    <script src="js/shop.js"></script> 
+    
+    <script src="js/tasks.js"></script>
+    
+    <script src="js/app.js"></script>
+    <script src="js/pomodoro.js"></script>
+    <script src="js/reports.js"></script>
+    <script src="js/onboarding.js"></script> 
+    <script>
+        lucide.createIcons();
+        
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => {
+                if(el.id !== 'nav-admin') el.classList.replace('opacity-100', 'opacity-50');
+            });
+            const target = document.getElementById('view-' + viewName);
+            if(target) target.classList.remove('hidden');
+            const nav = document.getElementById('nav-' + viewName);
+            if(nav && viewName !== 'admin') nav.classList.replace('opacity-50', 'opacity-100');
+            
+            // Trigger specific view loaders
+            if(viewName === 'contest' && window.loadContestData) window.loadContestData();
+            if(viewName === 'reports' && window.initReports) window.initReports();
+            if(viewName === 'admin' && window.loadAdminPanel) window.loadAdminPanel();
+            if(viewName === 'shop' && window.loadShop) window.loadShop(); 
+            if(viewName === 'tasks' && window.loadTasks) window.loadTasks(); 
+        }
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed', err));
+            });
+        }
+    </script>
+</body>
+</html>
